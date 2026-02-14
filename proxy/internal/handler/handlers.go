@@ -282,6 +282,16 @@ func (h *Handler) handleStreamingResponse(w http.ResponseWriter, resp *http.Resp
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		line := scanner.Text()
+
+		// Forward event: lines to preserve SSE event types
+		if strings.HasPrefix(line, "event:") {
+			fmt.Fprintf(w, "%s\n", line)
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
+			continue
+		}
+
 		if line == "" || !strings.HasPrefix(line, "data:") {
 			continue
 		}
